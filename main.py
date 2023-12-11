@@ -1,13 +1,14 @@
 import tkinter as tk
-import bcrypt
+from tkinter import messagebox as mb
 
 from Data import Data, User
 from ui.Home import Home
 from ui.LoginUI import LoginUI
 from ui.AdminUI import AdminUI
 
-window_height = 700
-window_width = 900
+window_width = 1500
+window_height = 900
+
 
 
 class Main(tk.Tk):
@@ -26,7 +27,7 @@ class Main(tk.Tk):
 
 
         # self.show_frame(Home)
-        self.show_frame(Home)
+        self.show_frame(AdminUI)
         self.db = Data()
 
     def show_frame(self, cont):
@@ -41,16 +42,15 @@ class Main(tk.Tk):
 
         user_name = str(submit[0])
         password = str(submit[1])
-        print(type(user_name), user_name)
 
         # hash_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         # user = User(user_name, hash_password,'Tuyet','Nhi','tuyetnhi@gmail.com','1234554566',1)
         user = self.db.get_user_by_credentials(user_name, password)
         if user:
-            print(user.email)
             self.show_frame(AdminUI)
         else:
-            print('Not found')
+            mb.showerror("Error", "Wrong email or password")
+            print('Wrong email or password')
 
 
 if __name__ == '__main__':
@@ -66,5 +66,4 @@ if __name__ == '__main__':
     # comment geometry to use this
     # app.eval('tk::PlaceWindow . center')
     app.geometry("{}x{}+{}+{}".format(window_width, window_height, x_cordinate, y_cordinate))
-    print('app ', app.winfo_width(), app.winfo_height())
     app.mainloop()

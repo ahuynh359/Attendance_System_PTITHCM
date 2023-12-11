@@ -18,7 +18,7 @@ class Home(tk.Frame):
         path = os.getcwd()
         self.img = ImageTk.PhotoImage(Image.open(os.path.join(path, 'src/img.png')))
         panel = ttk.Label(self, image=self.img)
-        panel.pack(pady=100)
+        panel.pack(pady=50)
 
         # Title
         lb_title = ttk.Label(self, text='Face Recognition', font=("Verdana", 35))

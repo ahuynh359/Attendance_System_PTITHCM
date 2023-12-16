@@ -2,14 +2,14 @@ import os
 from datetime import datetime
 
 import bcrypt
-from sqlalchemy import create_engine, Column, Integer, String, Sequence, BINARY, ForeignKey, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, Sequence, BINARY, ForeignKey, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 
 Base = declarative_base()
 
 
-class User(Base):
+class UserEntity(Base):
     __tablename__ = 'user'
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_name = Column(String(50), unique=True, nullable=False)
@@ -22,8 +22,8 @@ class User(Base):
     role = Column(Integer, default=1)
 
     # Foreign
-    images = relationship('Image', back_populates='user')
-    attendances = relationship('Attendance', back_populates='user')
+    images = relationship('ImageEntity', back_populates='user')
+    attendances = relationship('AttendanceEntity', back_populates='user')
 
     def __init__(self, user_name, hash_password, first_name=None, last_name=None, email=None, phone_number=None,
                  gender=0, role=1):
@@ -37,7 +37,7 @@ class User(Base):
         self.role = role
 
 
-class Image(Base):
+class ImageEntity(Base):
     __tablename__ = 'image'
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('user.id'))
@@ -45,17 +45,26 @@ class Image(Base):
     describe = Column(String(50))
 
     # Relationship with User
-    user = relationship('User', back_populates='images')
+    user = relationship('UserEntity', back_populates='images')
+
+    def __init__(self, user_id, image, describe=''):
+        self.user_id = user_id
+        self.image = image
+        self.describe = describe
 
 
-class Attendance(Base):
+class AttendanceEntity(Base):
     __tablename__ = 'attendance'
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('user.id'))
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     # Relationship with User
-    user = relationship('User', back_populates='attendances')
+    user = relationship('UserEntity', back_populates='attendances')
+
+    def __init__(self, user_id, timestamp):
+        self.user_id = user_id
+        self.timestamp = timestamp
 
 
 class Data:
@@ -68,40 +77,74 @@ class Data:
 
     def read_all_users(self):
         try:
-            users = self.session.query(User).all()
+            users = self.session.query(UserEntity).all()
             print("All users:")
             for user in users:
                 print(user.id, user.user_name, user.email, user.hash_password)
+            return users
         except ValueError as err:
             print('Error when get all users', err)
+        return None
+
+    def create_image(self, image):
+        try:
+            new_image = ImageEntity(image.user_id, image.image, image.describe)
+            self.session.add(new_image)
+            self.session.commit()
+            return 1
+        except ValueError as err:
+            print('Error when insert image', err)
+        return 0
+
+    def get_image(self, user_id):
+        image = self.session.query(ImageEntity).filter_by(user_id=user_id)
+        if image:
+            return image
+        else:
+            print('No Images')
+            return None
 
     def create_user(self, user):
         try:
-            new_user = User(user_name=user.user_name, hash_password=user.hash_password, first_name=user.first_name,
-                            last_name=user.last_name,
-                            email=user.email, phone_number=user.phone_number, gender=user.gender)
+            new_user = UserEntity(user_name=user.user_name, hash_password=user.hash_password,
+                                  first_name=user.first_name,
+                                  last_name=user.last_name,
+                                  email=user.email, phone_number=user.phone_number, gender=user.gender)
             self.session.add(new_user)
             self.session.commit()
+            return 1
         except ValueError as err:
             print('Error when insert user', err)
+        return 0
 
-    def delete_user(self, user_name):
+    def delete_user(self, id):
         try:
-            user_to_delete = self.session.query(User).filter_by(user_name=user_name)
+            user_to_delete = self.session.query(UserEntity).filter_by(id=id).first()
             if user_to_delete:
                 self.session.delete(user_to_delete)
                 self.session.commit()
+                return 0
         except ValueError as err:
             print('Error when delete user', err)
+        return 1
 
-    def get_user_by_credentials(self, user_name: str, password: str):
-        user = self.session.query(User).filter_by(user_name=user_name).first()
+    def get_user(self, user_name: str, password: str):
+        user = self.session.query(UserEntity).filter_by(user_name=user_name).first()
         if user and bcrypt.checkpw(password.encode('utf-8'), user.hash_password.encode('utf-8')):
             print(user.email)
             return user
         else:
             print('None')
             return None
+
+    def create_attendance(self, attendance):
+        try:
+            self.session.add(attendance)
+            self.session.commit()
+            return 1
+        except ValueError as err:
+            print('Error when insert atetendance', err)
+        return 0
 
     def close_session(self):
         self.session.close()

@@ -13,6 +13,7 @@ class Main(tk.Tk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.db = Data()
+        print(self.db.get_next_id_user())
 
         self.container = tk.Frame(self)
         self.container.pack(side="top", fill="both", expand=True)
@@ -25,7 +26,7 @@ class Main(tk.Tk):
         for F in (HomeUI, LoginUI, AdminUI):
             frame = F(self.container, self)
             self.frames[F] = frame
-
+        self.db.get_all_user_id()
         self.show_frame(AdminUI)
 
     def show_frame(self, cont):

@@ -2,9 +2,10 @@ import os
 from datetime import datetime
 
 import bcrypt
-from sqlalchemy import create_engine, Column, Integer, String, Sequence, BINARY, ForeignKey, DateTime, Text
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, func
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship, Session
+from sqlalchemy.orm import relationship, Session
 
 Base = declarative_base()
 
@@ -27,6 +28,18 @@ class UserEntity(Base):
 
     def __init__(self, user_name, hash_password, first_name=None, last_name=None, email=None, phone_number=None,
                  gender=0, role=1):
+        self.user_name = user_name
+        self.hash_password = hash_password
+        self.first_name = first_name
+        self.last_name = last_name
+        self.email = email
+        self.phone_number = phone_number
+        self.gender = gender
+        self.role = role
+
+    def __init__(self, id, user_name, hash_password, first_name=None, last_name=None, email=None, phone_number=None,
+                 gender=0, role=1):
+        self.id = id
         self.user_name = user_name
         self.hash_password = hash_password
         self.first_name = first_name
@@ -106,16 +119,13 @@ class Data:
 
     def create_user(self, user):
         try:
-            new_user = UserEntity(user_name=user.user_name, hash_password=user.hash_password,
-                                  first_name=user.first_name,
-                                  last_name=user.last_name,
-                                  email=user.email, phone_number=user.phone_number, gender=user.gender)
-            self.session.add(new_user)
+            self.session.add(user)
             self.session.commit()
             return 1
-        except ValueError as err:
-            print('Error when insert user', err)
-        return 0
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            self.session.rollback()
+            return 0
 
     def delete_user(self, id):
         try:
@@ -137,6 +147,10 @@ class Data:
             print('None')
             return None
 
+    def get_next_id_user(self):
+        id = self.session.query(func.max(UserEntity.id)).first()
+        return str(id[0] + 1)
+
     def create_attendance(self, attendance):
         try:
             self.session.add(attendance)
@@ -145,6 +159,35 @@ class Data:
         except ValueError as err:
             print('Error when insert atetendance', err)
         return 0
+
+    def update_user(self, user):
+        try:
+            self.session.query(UserEntity).filter_by(id=user.id).update({
+                "user_name": user.user_name,
+                "hash_password": user.hash_password,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email,
+                "phone_number": user.phone_number,
+                "gender": user.gender
+            })
+
+            self.session.commit()
+            return 1
+
+        except NoResultFound:
+            print(f"User with ID {user.id} not found.")
+            return 0
+
+        except Exception as e:
+            print('Error when updating user:', e)
+            self.session.rollback()
+            return 0
+
+    def get_all_user_id(self):
+        id_values = self.session.query(UserEntity.id).all()
+        id_list = [item[0] for item in id_values]
+        return id_list
 
     def close_session(self):
         self.session.close()

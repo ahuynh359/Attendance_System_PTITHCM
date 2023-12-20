@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox as mb
-
+from EmployeeUI import EmployeeUI
 from Data import Data
 from HomeUI import HomeUI
 from LoginUI import LoginUI
@@ -13,7 +13,6 @@ class Main(tk.Tk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.db = Data()
-        print(self.db.get_next_id_user())
 
         self.container = tk.Frame(self)
         self.container.pack(side="top", fill="both", expand=True)
@@ -23,11 +22,11 @@ class Main(tk.Tk):
 
         self.frames = {}
 
-        for F in (HomeUI, LoginUI, AdminUI):
+        for F in (HomeUI, LoginUI, AdminUI, EmployeeUI):
             frame = F(self.container, self)
             self.frames[F] = frame
-        self.db.get_all_user_id()
-        self.show_frame(AdminUI)
+
+        self.show_frame(HomeUI)
 
     def show_frame(self, cont):
 
@@ -43,12 +42,18 @@ class Main(tk.Tk):
 
         user_name = str(submit[0])
         password = str(submit[1])
-
         user = self.db.get_user(user_name, password)
         if user:
-            self.show_frame(AdminUI)
+            if user.role == 0:
+                self.show_frame(AdminUI)
+            else:
+                self.frames[EmployeeUI].user_id = user.id
+                print(self.frames[EmployeeUI].user_id)
+                self.show_frame(EmployeeUI)
+            return user.id
         else:
             mb.showerror("Error", "Wrong email or password")
+        return None
 
 
 if __name__ == '__main__':

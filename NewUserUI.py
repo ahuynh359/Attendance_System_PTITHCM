@@ -1,3 +1,5 @@
+import csv
+import os
 import tkinter as tk
 import calendar
 import time
@@ -124,6 +126,11 @@ class NewUser(tk.Frame):
         self.current_path = "data/image_data"
         self.current_frame_faces_cnt = 0
 
+        self.predictor = dlib.shape_predictor(
+            'data/data_dlib/shape_predictor_68_face_landmarks.dat')
+        self.face_reco_model = dlib.face_recognition_model_v1(
+            'data/data_dlib/dlib_face_recognition_resnet_model_v1.dat')
+
         self.data = controller.data
 
         self.is_capturing = False
@@ -234,10 +241,11 @@ class NewUser(tk.Frame):
 
             ress = self.data.create_user(user)
             if ress == 1:
+                self.write_feature(str(self.data.get_user_id(self.text_user_name.get())))
                 mb.showinfo("Success", "Create new user successfully")
                 self.clear_data()
             else:
-                mb.showinfo("Failed", "Create new user failed")
+                mb.showerror("Failed", "Create new user failed")
 
     def process(self):
 
@@ -275,13 +283,48 @@ class NewUser(tk.Frame):
                                                            tuple([value.right() + self.face_ROI_half_width,
                                                                   value.bottom() + self.face_ROI_half_height]),
                                                            color_rectangle, 2)
-                        self.current_frame_faces_cnt = len(faces)
 
-            self.current_frame = cv2.resize(self.current_frame, (700, 500))
+                self.current_frame_faces_cnt = len(faces)
 
-            image = Image.fromarray(self.current_frame)
-            image = ImageTk.PhotoImage(image)
-            self.lb_camera.img_tk = image
-            self.lb_camera.configure(image=image)
+                image = Image.fromarray(self.current_frame)
+                image = ImageTk.PhotoImage(image)
+                self.lb_camera.img_tk = image
+                self.lb_camera.configure(image=image)
 
             self.after(5, self.process)
+
+    def return_128d_features(self, path):
+        image = cv2.imread(path)
+        faces = self.detector(image, 0)
+        if len(faces) != 0:
+            shape = self.predictor(image, faces[0])
+            face_descriptor = self.face_reco_model.compute_face_descriptor(image, shape)
+        else:
+            face_descriptor = None
+        return face_descriptor
+
+    def write_feature(self, id):
+        # Get all files in path
+        path = [f for f in os.listdir(self.current_path) if f.startswith(id)]
+        print(path)
+        features_list = []
+
+        for i in range(len(path)):
+
+            features_128d = self.return_128d_features(self.current_path + '/' + path[i])
+            if features_128d:
+                features_list.append(features_128d)
+            else:
+                i += 1
+
+        if features_list:
+            features_list = np.array(features_list, dtype=object).mean(axis=0)
+        else:
+            features_list = np.zeros(128, dtype=object, order='C')
+
+        with open('data/features.csv', 'a', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            features_list = np.insert(features_list, 0, id, axis=0)
+            writer.writerow(features_list)
+            mb.showinfo('Feature extraction',
+                        'Successful with person ' + id + '\n total' + str(len(path)))

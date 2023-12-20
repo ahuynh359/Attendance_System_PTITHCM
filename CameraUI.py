@@ -150,9 +150,7 @@ class CameraUI:
                                 from Data import AttendanceEntity
                                 current_time = datetime.now()
 
-                                # Print the current time
-                                print("Current Time:", current_time)
-                                attendance = AttendanceEntity(int(self.current_frame_face_name_list[i]),current_time)
+                                attendance = AttendanceEntity(int(self.current_frame_face_name_list[i]), current_time)
                                 self.db.create_attendance(attendance)
                                 mb.showinfo('Face Name', 'Success ' + str(self.current_frame_face_name_list[i]))
 

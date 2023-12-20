@@ -1,18 +1,8 @@
-import csv
-import os.path
 import tkinter as tk
-import calendar
-import time
-from threading import Thread
 from tkinter import ttk
 import bcrypt
-import numpy as np
-from PIL import Image, ImageTk
 from tkinter import messagebox as mb
-import cv2
-from Data import UserEntity, ImageEntity
-import dlib
-from NewUserUI import NewUser
+from Data import UserEntity
 
 
 class ManageUserUI(tk.Frame):
@@ -34,9 +24,8 @@ class ManageUserUI(tk.Frame):
         self.lb_password = ttk.Label(self.new_user_frame_left, text='Password')
         self.lb_password.grid(row=2, column=0, padx=15, pady=5)
 
-        self.text_password = tk.StringVar()
-        self.et_password = ttk.Entry(self.new_user_frame_left, width=25, show='*', textvariable=self.text_password)
-        self.et_password.grid(row=3, column=0, padx=10, pady=5)
+        self.btn_reset_pass = ttk.Button(self.new_user_frame_left, text='Reset Password', command=self.reset_password)
+        self.btn_reset_pass.grid(row=3, column=0, padx=10, pady=5)
 
         self.lb_first_name = ttk.Label(self.new_user_frame_left, text='First Name')
         self.lb_first_name.grid(row=4, column=0, padx=15, pady=5)
@@ -111,27 +100,38 @@ class ManageUserUI(tk.Frame):
         self.my_tree.selection_remove(self.my_tree.selection())
         self.clear_data()
 
+    def reset_password(self):
+        if self.my_tree.selection():
+            selected_item = self.my_tree.selection()[0]
+            id = str(self.my_tree.item(selected_item)['values'][0])
+
+            res = self.data.reset_password(int(id))
+            if res == 1:
+                mb.showinfo('Success', 'Update password for user ' + id + ' successfully')
+            else:
+                mb.showerror('Failed', 'Update password for user failed')
+
+        else:
+            mb.showerror("Error", "No Item Selected")
+
     def delete_data(self):
         if self.my_tree.selection():
             selected_item = self.my_tree.selection()[0]
             id = str(self.my_tree.item(selected_item)['values'][0])
             res = self.data.delete_user(int(id))
-            print(res)
             if res == 1:
-                mb.showerror('Error', 'Cannot delete user')
-            else:
                 mb.showinfo('Success', 'Delete user ' + id + ' successfully')
-            self.refresh_data()
-            self.clear_data()
+            else:
+                mb.showerror('Failed', 'Delete user failed because this user has images or attendances')
+
         else:
             mb.showerror("Error", "No Item Selected")
+        self.refresh_data()
+        self.clear_data()
 
     def check_data(self):
         if str(self.et_user_name.get()).strip() == '':
             mb.showwarning("Empty", "Do not leave user name empty")
-            return 0
-        if str(self.et_password.get()).strip() == '':
-            mb.showwarning("Empty", "Do not leave password empty")
             return 0
         if str(self.et_first_name.get()).strip() == '':
             mb.showwarning("Empty", "Do not leave first name empty")
@@ -148,36 +148,35 @@ class ManageUserUI(tk.Frame):
         return 1
 
     def update_data(self):
-        selected_item = self.my_tree.selection()[0]
-        id = str(self.my_tree.item(selected_item)['values'][0])
+        if self.my_tree.selection():
+            selected_item = self.my_tree.selection()[0]
+            id = str(self.my_tree.item(selected_item)['values'][0])
 
-        res = self.check_data()
-        if res == 1:
-            user_name = self.text_user_name.get()
-            password = self.text_password.get()
-            first_name = self.text_first_name.get()
-            last_name = self.text_last_name.get()
-            email = self.text_email.get()
-            phone = self.text_phone.get()
-            gender = str(self.cmb_gender.get())
-            if gender == 'Female':
-                gender = 1
-            else:
-                gender = 0
-            hash_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-            user = UserEntity(id, user_name, hash_password, first_name, last_name, email, phone, gender)
+            res = self.check_data()
+            if res == 1:
+                user_name = self.text_user_name.get()
+                first_name = self.text_first_name.get()
+                last_name = self.text_last_name.get()
+                email = self.text_email.get()
+                phone = self.text_phone.get()
+                gender = str(self.cmb_gender.get())
+                if gender == 'Female':
+                    gender = 1
+                else:
+                    gender = 0
 
-            ress = self.data.update_user(user)
-            if ress == 1:
-                mb.showinfo("Success", "Update user successfully")
-                self.clear_data()
-                self.refresh_data()
-            else:
-                mb.showinfo("Failed", "Update user failed")
+                ress = self.data.update_user(id, user_name, first_name, last_name, email, phone, gender)
+                if ress == 1:
+                    mb.showinfo("Success", "Update user successfully")
+                else:
+                    mb.showerror("Failed", "Update user failed")
+        else:
+            mb.showerror("Error", "No Item Selected")
+        self.refresh_data()
+        self.clear_data()
 
     def clear_data(self):
         self.et_user_name.delete(0, tk.END)
-        self.et_password.delete(0, tk.END)
         self.et_first_name.delete(0, tk.END)
         self.et_last_name.delete(0, tk.END)
         self.et_email.delete(0, tk.END)
@@ -192,7 +191,6 @@ class ManageUserUI(tk.Frame):
         record = item['values']
 
         self.text_user_name.set(record[1])
-        self.text_password.set(record[2])
         self.text_first_name.set(record[3])
         self.text_last_name.set(record[4])
         self.text_email.set(record[5])

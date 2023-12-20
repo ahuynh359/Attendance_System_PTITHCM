@@ -152,11 +152,17 @@ class CameraUI:
 
                                 attendance = AttendanceEntity(int(self.current_frame_face_name_list[i]), current_time)
                                 self.db.create_attendance(attendance)
-                                mb.showinfo('Face Name', 'Success ' + str(self.current_frame_face_name_list[i]))
+                                mb.showinfo('Face Name', 'Success ' + str(int(self.current_frame_face_name_list[i])))
 
-                        img_rd = cv2.putText(img_rd, str(self.current_frame_face_name_list[i]),
-                                             self.current_frame_face_position_list[i], self.font, 0.8, (0, 255, 255), 1,
-                                             cv2.LINE_AA)
+                        if "unknown" in self.current_frame_face_name_list:
+                            img_rd = cv2.putText(img_rd, str(self.current_frame_face_name_list[i]),
+                                                 self.current_frame_face_position_list[i], self.font, 0.8, (0, 255, 255), 1,
+                                                 cv2.LINE_AA)
+                        else:
+                            img_rd = cv2.putText(img_rd, str(int(self.current_frame_face_name_list[i])),
+                                                 self.current_frame_face_position_list[i], self.font, 0.8,
+                                                 (0, 255, 255), 1,
+                                                 cv2.LINE_AA)
 
                     self.draw_note(img_rd)
 

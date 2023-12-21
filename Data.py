@@ -135,6 +135,7 @@ class Data:
             self.session.rollback()
             return 0
 
+
     def get_user(self, user_name: str, password: str):
         user = self.session.query(UserEntity).filter_by(user_name=user_name).first()
         if user and bcrypt.checkpw(password.encode('utf-8'), user.hash_password):

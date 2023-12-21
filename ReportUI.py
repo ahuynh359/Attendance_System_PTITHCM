@@ -67,6 +67,7 @@ class ReportUI(tk.Frame):
     def refresh_report_data(self, user_id):
         for data in self.report_table.get_children():
             self.report_table.delete(data)
+
         attendance = self.data.get_attendance_by_user_id(user_id, self.date.get())
         if attendance is None:
             mb.showinfo("None", "user has no attendance")

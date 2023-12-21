@@ -137,31 +137,34 @@ class NewUser(tk.Frame):
 
     def take_image(self):
         if self.current_frame_faces_cnt > 0:
-            if not self.out_of_range_flag:
+            if self.current_frame_faces_cnt == 1:
+                if not self.out_of_range_flag:
 
-                # create matrix filled with 0
-                self.face_ROI_image = np.zeros((self.face_ROI_height * 2, self.face_ROI_width * 2, 3), np.uint8)
+                    # create matrix filled with 0
+                    self.face_ROI_image = np.zeros((self.face_ROI_height * 2, self.face_ROI_width * 2, 3), np.uint8)
 
-                # get every cell of image
-                for i in range(self.face_ROI_height * 2):
-                    for j in range(self.face_ROI_width * 2):
-                        self.face_ROI_image[i][j] = \
-                            self.current_frame[self.face_ROI_height_start - self.face_ROI_half_height + i][
-                                self.face_ROI_width_start - self.face_ROI_half_width + j]
+                    # get every cell of image
+                    for i in range(self.face_ROI_height * 2):
+                        for j in range(self.face_ROI_width * 2):
+                            self.face_ROI_image[i][j] = \
+                                self.current_frame[self.face_ROI_height_start - self.face_ROI_half_height + i][
+                                    self.face_ROI_width_start - self.face_ROI_half_width + j]
 
-                self.face_ROI_image = cv2.cvtColor(self.face_ROI_image, cv2.COLOR_BGR2RGB)
+                    self.face_ROI_image = cv2.cvtColor(self.face_ROI_image, cv2.COLOR_BGR2RGB)
 
-                current_gmt = time.gmtime()
-                time_stamp = calendar.timegm(current_gmt)
-                path = self.current_path + '/' + self.data.get_next_id_user() + '_' + str(time_stamp) + ".jpg"
-                print(path)
-                cv2.imwrite(path, self.face_ROI_image)
+                    current_gmt = time.gmtime()
+                    time_stamp = calendar.timegm(current_gmt)
+                    path = self.current_path + '/' + self.data.get_next_id_user() + '_' + str(time_stamp) + ".jpg"
+                    print(path)
+                    cv2.imwrite(path, self.face_ROI_image)
 
-                self.lb_info['text'] = 'Image saved at ' + path
-                image = ImageEntity(self.data.get_next_id_user(), path, '')
-                self.data.create_image(image)
+                    self.lb_info['text'] = 'Image saved at ' + path
+                    image = ImageEntity(self.data.get_next_id_user(), path, '')
+                    self.data.create_image(image)
+                else:
+                    self.lb_info['text'] = 'Image out of range'
             else:
-                self.lb_info['text'] = 'Image out of range'
+                self.lb_info['text'] = 'There is more than one person in the frame'
         else:
             self.lb_info['text'] = 'No faces detected'
 

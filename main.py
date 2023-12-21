@@ -10,6 +10,8 @@ from CameraUI import CameraUI
 
 class Main(tk.Tk):
 
+    data = Data()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.db = Data()
@@ -37,6 +39,7 @@ class Main(tk.Tk):
     def show_camera(self):
         camera = CameraUI(self)
         camera.run()
+
 
     def login(self, submit):
 

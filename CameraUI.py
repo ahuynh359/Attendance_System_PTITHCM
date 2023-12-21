@@ -110,19 +110,19 @@ class CameraUI:
                 self.last_frame_face_centroid_list = self.current_frame_face_centroid_list
                 self.current_frame_face_centroid_list = []
 
-                # if cnt not changes
+                # if len of faces has not changed and it tracks the people
                 if (self.current_frame_face_cnt == self.last_frame_face_cnt) and (
                         self.reclassify_interval_cnt != 10):
 
-                    print('cnt not changes')
                     print(self.reclassify_interval_cnt)
 
                     self.current_frame_face_position_list = []
 
+                    # if there is an unknown face increase reclassify_interval_cnt var
                     if "unknown" in self.current_frame_face_name_list:
                         self.reclassify_interval_cnt += 1
 
-                    # save pos of image
+                    # save position of tracked image
                     if self.current_frame_face_cnt != 0:
                         for k, d in enumerate(faces):
                             self.current_frame_face_position_list.append(tuple(
@@ -139,14 +139,15 @@ class CameraUI:
                     # Multi-faces in current frame, use centroid-tracker to track
                     if self.current_frame_face_cnt != 1:
                         self.centroid_tracker()
+
                     # write name
                     for i in range(self.current_frame_face_cnt):
                         if self.current_frame_face_name_list[i] != 'unknown':
                             self.count += 1
+                            # If it has tracked person and kept for 30s to write record to db
                             if self.count == 30:
                                 self.cap.release()
                                 cv2.destroyAllWindows()
-                                from Data import Data
                                 from Data import AttendanceEntity
                                 current_time = datetime.now()
 
@@ -156,7 +157,8 @@ class CameraUI:
 
                         if "unknown" in self.current_frame_face_name_list:
                             img_rd = cv2.putText(img_rd, str(self.current_frame_face_name_list[i]),
-                                                 self.current_frame_face_position_list[i], self.font, 0.8, (0, 255, 255), 1,
+                                                 self.current_frame_face_position_list[i], self.font, 0.8,
+                                                 (0, 255, 255), 1,
                                                  cv2.LINE_AA)
                         else:
                             img_rd = cv2.putText(img_rd, str(int(self.current_frame_face_name_list[i])),
@@ -166,9 +168,8 @@ class CameraUI:
 
                     self.draw_note(img_rd)
 
-                #   Faces cnt changes in this frame
+                #   Len of faces changed or person with unknown
                 else:
-                    print('cnt changes')
                     self.current_frame_face_position_list = []
                     self.current_frame_face_X_e_distance_list = []
                     self.current_frame_face_feature_list = []
